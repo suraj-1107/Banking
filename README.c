@@ -25,14 +25,14 @@ void* processCode(void* );
 int main(int argc, char** argv) {
 	srand(time(NULL));
 
-        printf("\nNumber of processes? ");
+        printf("\nTotal number of processes? ");
         scanf("%d", &nProcesses);
 
-        printf("\nNumber of resources? ");
+        printf("\Total number of resources? ");
         scanf("%d", &nResources);
 
         resources = (int *)malloc(nResources * sizeof(*resources));
-        printf("\nCurrently Available resources (R1 R2 ...)? ");
+        printf("\npresent resources ? ");
         for(int i=0; i<nResources; i++)
                 scanf("%d", &resources[i]);
 
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 		 // allocated
         printf("\n");
         for(int i=0; i<nProcesses; i++) {
-                printf("\nResource allocated to process %d (R1 R2 ...)? ", i+1);
+                 printf("\nResource allocated to process %d ? ", i+1);
                 for(int j=0; j<nResources; j++)
                         scanf("%d", &allocated[i][j]);
         }
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 
 	// maximum required resources
         for(int i=0; i<nProcesses; i++) {
-                printf("\nMaximum resource required by process %d (R1 R2 ...)? ", i+1);
+                printf("\nThe maximum resource that is required by process %d ? ", i+1);
                 for(int j=0; j<nResources; j++)
                         scanf("%d", &maxRequired[i][j]);
         }
@@ -68,4 +68,37 @@ int main(int argc, char** argv) {
         for(int i=0; i<nProcesses; i++)
                 for(int j=0; j<nResources; j++)
                         need[i][j] = maxRequired[i][j] - allocated[i][j];
+		// get safe sequence
+	safeSeq = (int *)malloc(nProcesses * sizeof(*safeSeq));
+        for(int i=0; i<nProcesses; i++) safeSeq[i] = -1;
+
+        if(!getSafeSeq()) {
+                printf("\nUnsafe State! The processes leads the system to an unsafe state.\n\n");
+                exit(-1);
+        }
+
+        printf("\n\nSafe Sequence Found : ");
+        for(int i=0; i<nProcesses; i++) {
+                printf("%-3d", safeSeq[i]+1);
+        }
+
+        printf("\nExecuting Processes...\n\n");
+        sleep(1);
+	
+	// run threads
+	pthread_t processes[nProcesses];
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+
+	int processNumber[nProcesses];
+	for(int i=0; i<nProcesses; i++) processNumber[i] = i;
+
+        for(int i=0; i<nProcesses; i++)
+                pthread_create(&processes[i], &attr, processCode, (void *)(&processNumber[i]));
+
+        for(int i=0; i<nProcesses; i++)
+                pthread_join(processes[i], NULL);
+
+        printf("\nAll processes are finished\n");	
+	
 
